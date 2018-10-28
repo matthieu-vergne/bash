@@ -1,0 +1,1 @@
+Project containing generic bash scripts that other people may be interested in.
