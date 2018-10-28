@@ -268,6 +268,13 @@ scan() {
 		update_progress
 	done
 	wait
+	
+	# Hack to wait for child jobs warnings (ignored files).
+	# Otherwise, the last ones tend to be displayed after
+	# termination and mess the prompt.
+	if [ "$parallelize" == "true" ]; then
+		sleep 1
+	fi
 }
 
 scan "$scan_dir"
