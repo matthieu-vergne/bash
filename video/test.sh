@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#####################
+# UTILITY FUNCTIONS #
+#####################
+
 temp_dir() {
 	mktemp -d "${TMPDIR:-/tmp/}$(basename "$0").XXXXXXXXXXXX"
 }
@@ -16,32 +20,21 @@ addNoTimeVideo() {
 	touch "$target" # Empty file has no time
 }
 
-noDirErr() {
+getUsageAsFile() {
 	local dir
 	dir=$(temp_dir)
 	./size_all.sh 1> /dev/null 2> "$dir/stderr"
-	grep -E '^\s+[0-9]+\s+No directory provided\.$' < "$dir/stderr" | awk '{print $1}'
+	echo "$dir/stderr"
 }
 
-unknownOptionErr() {
-	local dir
-	dir=$(temp_dir)
-	./size_all.sh 1> /dev/null 2> "$dir/stderr"
-	grep -E '^\s+[0-9]+\s+Unknown option\.$' < "$dir/stderr" | awk '{print $1}'
-}
+##################
+# TEST FUNCTIONS #
+##################
 
 testNoDirErrIsValidErr() {
 	local err
 	
-	err=$(noDirErr)
-	assertNotNull "$err"
-	assertTrue "[[ $err > 0 ]]"
-}
-
-testUnknownOptionErrIsValidErr() {
-	local err
-	
-	err=$(unknownOptionErr)
+	err=$(grep -E '^\s+[0-9]+\s+No directory provided\.$' < "$(getUsageAsFile)" | awk '{print $1}')
 	assertNotNull "$err"
 	assertTrue "[[ $err > 0 ]]"
 }
@@ -49,21 +42,33 @@ testUnknownOptionErrIsValidErr() {
 testNoOptionFailsWithNoDirErr() {
 	local dir
 	local actual
+	local noDirErr
 	dir=$(temp_dir)
+	noDirErr=$(grep -E '^\s+[0-9]+\s+No directory provided\.$' < "$(getUsageAsFile)" | awk '{print $1}')
 	
 	./size_all.sh 1> /dev/null 2> "$dir/stderr"
 	actual="$?"
-	assertEquals "$(noDirErr)" "$actual"
+	assertEquals "$noDirErr" "$actual"
+}
+
+testUnknownOptionErrIsValidErr() {
+	local err
+	
+	err=$(grep -E '^\s+[0-9]+\s+Unknown option\.$' < "$(getUsageAsFile)" | awk '{print $1}')
+	assertNotNull "$err"
+	assertTrue "[[ $err > 0 ]]"
 }
 
 testUnknownOptionFailsWithUnknownOptionErr() {
 	local dir
 	local actual
+	local unknownOptionErr
 	dir=$(temp_dir)
+	unknownOptionErr=$(grep -E '^\s+[0-9]+\s+Unknown option\.$' < "$(getUsageAsFile)" | awk '{print $1}')
 	
 	./size_all.sh --my-unknown-option 1> /dev/null 2> "$dir/stderr"
 	actual="$?"
-	assertEquals "$(unknownOptionErr)" "$actual"
+	assertEquals "${unknownOptionErr}" "$actual"
 }
 
 testNoOptionDisplaysUsageOnStdErr() {
