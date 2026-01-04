@@ -4,10 +4,15 @@
 # It uses Docker to retrieve an astrometry.net image and produce the WCS data of the image.
 # The SDSS image is then retrieved from the DESI Legacy Imaging Surveys website (legacysurvey.org).
 
+ASTRO_INDEX_DIR="${ASTRO_INDEX_DIR:-"${HOME}/astrometry_indexes"}"
 function show_help() {
 	echo "Usage: $0 <image_file>"
 	echo "Options:"
 	echo "  -h, --help      Show this help message and exit"
+	echo ""
+	echo "Astrometry indexes are retrieved from: $ASTRO_INDEX_DIR"
+	echo "To change it, set the ASTRO_INDEX_DIR environment variable."
+	echo "To know how to download the indexes, check astrometry.net"
 }
 
 if [[ "$#" -ne 1 ]]; then
@@ -34,8 +39,10 @@ echo "Working directory: ${PWD}"
 
 cp "${SOURCE_DIR}/${SOURCE_FILE}" "${WORK_DIR}/${SOURCE_FILE}"
 
+echo "Astrometry indexes: ${ASTRO_INDEX_DIR}"
+
 # Generate WCS file
-docker run --rm --user $(id -u):$(id -g) --volume "${WORK_DIR}:${WORK_DIR}" --workdir "${WORK_DIR}" --volume ~/astrometry_indexes:/usr/local/data astrometrynet/solver:latest solve-field "${SOURCE_FILE}"
+docker run --rm --user $(id -u):$(id -g) --volume "${WORK_DIR}:${WORK_DIR}" --workdir "${WORK_DIR}" --volume "${ASTRO_INDEX_DIR}:/usr/local/data" astrometrynet/solver:latest solve-field "${SOURCE_FILE}"
 
 # Extract relevant data from WCS file
 FILE_NAME="${SOURCE_FILE%.*}"
